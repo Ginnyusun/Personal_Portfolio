@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200">
+  <rect width="900" height="1200" fill="#ec88aa"/>
+  <path d="M0 220Q210 160 450 230T900 190V440Q650 380 450 450T0 400Z" fill="#f5b3c5"/>
+  <text x="450" y="160" text-anchor="middle" fill="#ba1438" font-family="Arial" font-size="82" font-weight="900">EXTRA</text>
+  <g fill="#f7d243" stroke="#ba1438" stroke-width="12">
+    <circle cx="160" cy="740" r="95"/><circle cx="380" cy="560" r="120"/><circle cx="650" cy="720" r="110"/><circle cx="470" cy="900" r="112"/>
+  </g>
+  <g fill="#4a86d8"><circle cx="255" cy="910" r="70"/><circle cx="735" cy="930" r="72"/></g>
+  <text x="450" y="1110" text-anchor="middle" fill="#fff5f7" font-family="Arial" font-size="38" font-weight="700">ILLUSTRATIONS</text>
+</svg>

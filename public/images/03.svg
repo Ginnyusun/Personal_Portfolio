@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200">
+  <rect width="900" height="1200" fill="#f2f0eb"/>
+  <rect x="55" y="55" width="790" height="1090" fill="#111111"/>
+  <path d="M90 210 810 170M90 320 810 280M90 430 810 390M90 540 810 500M90 650 810 610M90 760 810 720M90 870 810 830" stroke="#f2f0eb" stroke-width="22"/>
+  <text x="450" y="1060" text-anchor="middle" fill="#f2f0eb" font-family="Arial" font-size="46" font-weight="700">TYPOGRAPHY</text>
+</svg>

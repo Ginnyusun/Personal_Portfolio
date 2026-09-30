@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200">
+  <rect width="900" height="1200" fill="#dcecc9"/>
+  <path d="M120 850q85-320 330-390 245 70 330 390" fill="#e95d37" stroke="#202a2a" stroke-width="18"/>
+  <circle cx="450" cy="480" r="180" fill="#75bd78" stroke="#202a2a" stroke-width="18"/>
+  <circle cx="385" cy="460" r="18" fill="#202a2a"/><circle cx="515" cy="460" r="18" fill="#202a2a"/>
+  <path d="M390 545q60 55 120 0" fill="none" stroke="#202a2a" stroke-width="16"/>
+  <text x="450" y="1060" text-anchor="middle" fill="#202a2a" font-family="Arial" font-size="58" font-weight="900">HOUSE OF FROG</text>
+</svg>

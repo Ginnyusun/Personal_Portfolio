@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200">
+  <rect width="900" height="1200" fill="#73cde3"/>
+  <path d="M100 850h700" stroke="#111111" stroke-width="26"/>
+  <path d="M160 820 260 470h420l100 350Z" fill="#f05a38" stroke="#111111" stroke-width="18"/>
+  <circle cx="290" cy="830" r="65" fill="#111111"/><circle cx="650" cy="830" r="65" fill="#111111"/>
+  <text x="450" y="230" text-anchor="middle" fill="#111111" font-family="Arial" font-size="78" font-weight="900">POP ART</text>
+  <text x="450" y="320" text-anchor="middle" fill="#f05a38" font-family="Arial" font-size="78" font-weight="900">CAR</text>
+</svg>

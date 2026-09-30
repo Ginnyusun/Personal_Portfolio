@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7f5f2" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23292724'/%3E%3Cpath d='M16 48 29 14h7l12 34h-8l-3-9H26l-3 9Zm13-16h6l-3-10Z' fill='%23f2f0ec'/%3E%3C/svg%3E" />
+    <meta
+      name="description"
+      content="一个带弧形空间感和惯性滚动的交互作品集。"
+    />
+    <title>Justine Soulié / Selected works</title>
+  </head>
+  <body>
+    <main class="page">
+      <header class="masthead">
+        <a class="wordmark" href="#gallery" aria-label="返回作品集首页">JUSTINE SOULIÉ</a>
+        <a class="about-link" href="#about">ABOUT</a>
+      </header>
+
+      <section id="gallery" class="gallery" aria-label="横向作品画廊">
+        <canvas class="webgl" aria-hidden="true"></canvas>
+        <div class="gallery__status" aria-live="polite">
+          <p class="gallery__index"><span data-current>01</span><span>/</span><span>08</span></p>
+          <div class="gallery__copy">
+            <h1 data-title>hermes</h1>
+            <p data-type>promotional film</p>
+          </div>
+        </div>
+
+        <div class="sr-only">
+          <button type="button" data-jump="0">查看 Hermes</button>
+          <button type="button" data-jump="1">查看 extra</button>
+          <button type="button" data-jump="2">查看 typography</button>
+          <button type="button" data-jump="3">查看 miscellaneous</button>
+          <button type="button" data-jump="4">查看 M - Lettre Infinie</button>
+          <button type="button" data-jump="5">查看 Ponpon Mania</button>
+          <button type="button" data-jump="6">查看 Pop Art Car</button>
+          <button type="button" data-jump="7">查看 House of Frog</button>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200">
+  <rect width="900" height="1200" fill="#43b88c"/>
+  <path d="M120 330q160-140 330 0t330 0" fill="none" stroke="#142d40" stroke-width="26"/>
+  <g fill="#f7db3e" stroke="#142d40" stroke-width="12"><circle cx="240" cy="550" r="95"/><circle cx="470" cy="730" r="120"/><circle cx="690" cy="530" r="92"/></g>
+  <g fill="#f34b58"><circle cx="240" cy="550" r="25"/><circle cx="470" cy="730" r="28"/><circle cx="690" cy="530" r="25"/></g>
+  <text x="450" y="1050" text-anchor="middle" fill="#142d40" font-family="Arial" font-size="66" font-weight="900">PONPON MANIA</text>
+</svg>

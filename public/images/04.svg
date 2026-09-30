@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200">
+  <rect width="900" height="1200" fill="#f8c7df"/>
+  <rect x="72" y="72" width="756" height="1056" fill="#fffaf4"/>
+  <text x="450" y="245" text-anchor="middle" fill="#111111" font-family="Arial" font-size="100" font-weight="900">MISC</text>
+  <path d="M190 760c130-290 380-270 520-40" fill="none" stroke="#ef3660" stroke-width="120" stroke-linecap="round"/>
+  <circle cx="450" cy="640" r="48" fill="#111111"/>
+  <text x="450" y="1020" text-anchor="middle" fill="#ef3660" font-family="Arial" font-size="34" font-weight="700">MADE WITH LOVE</text>
+</svg>

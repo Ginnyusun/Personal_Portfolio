@@ -1,0 +1,136 @@
+:root {
+  color: #8c8782;
+  background: #f7f5f2;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-synthesis: none;
+  --edge: clamp(20px, 1.15vw, 31px);
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #f7f5f2;
+  overscroll-behavior: none;
+}
+
+body { min-width: 320px; }
+
+a,
+button { color: inherit; font: inherit; }
+
+a:focus-visible,
+button:focus-visible { outline: 1px solid #57524f; outline-offset: 4px; }
+
+.page,
+.gallery,
+.webgl {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.page { isolation: isolate; }
+
+.webgl {
+  display: block;
+  touch-action: none;
+  cursor: grab;
+}
+
+.webgl:active { cursor: grabbing; }
+
+.masthead {
+  position: fixed;
+  z-index: 3;
+  top: 20px;
+  left: var(--edge);
+  right: var(--edge);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.wordmark,
+.about-link {
+  color: #8b8580;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.gallery__status {
+  position: absolute;
+  z-index: 2;
+  bottom: clamp(62px, 8.6vh, 108px);
+  left: 50%;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 16px;
+  align-items: baseline;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.gallery__index,
+.gallery__copy h1,
+.gallery__copy p { margin: 0; }
+
+.gallery__index {
+  display: flex;
+  gap: 5px;
+  color: #aaa49f;
+  font-size: 10px;
+}
+
+.gallery__copy {
+  min-width: 126px;
+  text-align: center;
+}
+
+.gallery__copy h1 {
+  color: #8d8782;
+  font-size: clamp(16px, 1.2vw, 21px);
+  font-weight: 650;
+  line-height: 1.08;
+}
+
+.gallery__copy p {
+  margin-top: 7px;
+  color: #aaa49f;
+  font-size: 11px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 680px) {
+  .masthead { top: 18px; }
+  .wordmark,
+  .about-link { font-size: 10px; }
+  .gallery__status {
+    bottom: 48px;
+    gap: 10px;
+  }
+  .gallery__copy h1 { font-size: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+}

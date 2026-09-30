@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200">
+  <rect width="900" height="1200" fill="#ee7623"/>
+  <rect x="42" y="42" width="816" height="1116" fill="#f79b22" stroke="#ffe28c" stroke-width="16"/>
+  <path d="M180 700c80-180 290-240 540-110" fill="none" stroke="#f6efe5" stroke-width="35"/>
+  <circle cx="450" cy="500" r="235" fill="#7186c3" stroke="#f6efe5" stroke-width="24"/>
+  <path d="M260 550 650 390M390 400l40 170M560 470l-30 170" stroke="#e64f20" stroke-width="34" stroke-linecap="round"/>
+  <text x="450" y="145" text-anchor="middle" fill="#ffe6a8" font-family="Arial" font-size="52" font-weight="700">HERMÈS</text>
+  <text x="450" y="1080" text-anchor="middle" fill="#fff5da" font-family="Arial" font-size="100" font-weight="900">HERMES</text>
+</svg>

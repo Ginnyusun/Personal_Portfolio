@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200">
+  <rect width="900" height="1200" fill="#ea5a32"/>
+  <g transform="translate(450 560)" fill="none" stroke="#f7e5c1" stroke-width="25">
+    <circle r="300"/><circle r="230"/><circle r="160"/>
+  </g>
+  <path d="M145 850 755 250" stroke="#2b287e" stroke-width="42"/>
+  <text x="450" y="1080" text-anchor="middle" fill="#f7e5c1" font-family="Arial" font-size="48" font-weight="900">LETTRE INFINIE</text>
+</svg>
