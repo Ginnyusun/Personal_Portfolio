@@ -71,24 +71,19 @@ button:focus-visible { outline: 1px solid #57524f; outline-offset: 4px; }
   z-index: 2;
   bottom: clamp(62px, 8.6vh, 108px);
   left: 50%;
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 16px;
-  align-items: baseline;
+  display: block;
   pointer-events: none;
   transform: translateX(-50%);
+  transition: opacity 260ms cubic-bezier(.2, .7, .2, 1), transform 260ms cubic-bezier(.2, .7, .2, 1);
 }
 
-.gallery__index,
+.gallery__status.is-hidden {
+  opacity: 0;
+  transform: translate(-50%, 5px);
+}
+
 .gallery__copy h1,
 .gallery__copy p { margin: 0; }
-
-.gallery__index {
-  display: flex;
-  gap: 5px;
-  color: #aaa49f;
-  font-size: 10px;
-}
 
 .gallery__copy {
   min-width: 126px;
@@ -126,7 +121,6 @@ button:focus-visible { outline: 1px solid #57524f; outline-offset: 4px; }
   .about-link { font-size: 10px; }
   .gallery__status {
     bottom: 48px;
-    gap: 10px;
   }
   .gallery__copy h1 { font-size: 16px; }
 }

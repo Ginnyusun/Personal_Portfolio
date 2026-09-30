@@ -17,6 +17,7 @@ const canvas = document.querySelector('.webgl');
 const titleEl = document.querySelector('[data-title]');
 const typeEl = document.querySelector('[data-type]');
 const currentEl = document.querySelector('[data-current]');
+const statusEl = document.querySelector('.gallery__status');
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
 renderer.setClearColor(0xf7f5f2, 1);
@@ -24,23 +25,34 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(27, 1, 0.1, 100);
-camera.position.set(0, 0.02, 8.9);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 20);
+camera.position.set(0, 0, 3);
 
 const vertexShader = `
   uniform float uTime;
-  uniform float uBend;
-  uniform float uVelocity;
+  uniform float uVelocityAbs;
+  uniform float uIndex;
+  uniform float uBump;
   varying vec2 vUv;
+
+  float parabola(float x) {
+    return 4.0 * x * (1.0 - x);
+  }
+
   void main() {
     vUv = uv;
-    vec3 p = position;
-    float edge = abs(uv.x - 0.5) * 2.0;
-    float middle = sin(uv.x * 3.14159265);
-    p.z += middle * uBend;
-    p.z += sin(uv.y * 13.0 + uTime * 0.7) * edge * min(abs(uVelocity), 1.0) * 0.018;
-    p.x += sin(uv.y * 5.0 + uTime * 0.4) * edge * min(abs(uVelocity), 1.0) * 0.008;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+    vec4 clipPosition = modelViewMatrix * vec4(position, 1.0);
+    vec3 ndcPosition = clipPosition.xyz / clipPosition.w;
+    vec3 newPos = position;
+    float screenX = clamp(ndcPosition.x * 0.5 + 0.5, 0.0, 1.0);
+
+    // The reference gallery bends one continuous screen-space strip toward the viewer.
+    newPos.z += parabola(screenX) * 0.4 * uBump;
+    newPos.z += max(abs(uVelocityAbs) * -0.7, -0.1) * uBump;
+    newPos.z -= sin(uv.y * 10.0 + uIndex) * 0.01 * uBump;
+    newPos.y -= cos(uv.x * 10.0 + uIndex + 100.0) * 0.0035 * uBump;
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
   }
 `;
 
@@ -63,23 +75,24 @@ const meshes = projects.map((project, index) => {
     uniforms: {
       uTexture: { value: texture },
       uTime: { value: 0 },
-      uBend: { value: 0.1 },
-      uShade: { value: 0.92 },
-      uVelocity: { value: 0 },
+      uVelocityAbs: { value: 0 },
+      uIndex: { value: index },
+      uBump: { value: 1 },
+      uShade: { value: 1 },
     },
     vertexShader,
     fragmentShader,
     side: THREE.DoubleSide,
   });
   hydrateTexture(project.image, material, project, index);
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.25, 3.05, 36, 42), material);
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 40, 40), material);
   mesh.userData.index = index;
   scene.add(mesh);
   return mesh;
 });
 
-const state = { target: 0, current: 0, velocity: 0, active: -1 };
-const pointer = { down: false, startX: 0, startTarget: 0, moved: false };
+const state = { target: 0, current: 0, velocity: 0, velocityAbs: 0, active: -1, idle: true };
+const pointer = { down: false, lastX: 0, travel: 0, moved: false };
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function wrappedDistance(index, current) {
@@ -149,8 +162,6 @@ function resize() {
   const height = window.innerHeight;
   renderer.setSize(width, height, false);
   camera.aspect = width / height;
-  camera.fov = width < 680 ? 38 : 27;
-  camera.position.z = width < 680 ? 8.2 : 8.9;
   camera.updateProjectionMatrix();
 }
 
@@ -168,34 +179,43 @@ function setActive(index) {
 }
 
 function animate(time = 0) {
-  const previous = state.current;
-  const ease = reducedMotion ? 0.2 : pointer.down ? 0.19 : 0.11;
-  state.current += (state.target - state.current) * ease;
-  state.velocity += ((state.current - previous) * 5 - state.velocity) * 0.14;
-  const spacing = window.innerWidth < 680 ? 2.16 : 2.34;
-  const baseline = window.innerWidth < 680 ? 0.02 : 0.05;
-  const height = window.innerWidth < 680 ? 2.95 : 3.05;
-  const width = window.innerWidth < 680 ? 2.18 : 2.25;
+  state.velocity = state.target - state.current;
+  state.velocityAbs += (Math.abs(state.velocity) - state.velocityAbs) * 0.12;
+
+  if (reducedMotion) {
+    state.current = state.target;
+  } else if (!pointer.down && Math.abs(state.velocity) < 0.01) {
+    state.target = Math.round(state.current);
+    state.velocity = state.target - state.current;
+    state.velocityAbs += (Math.abs(state.velocity) - state.velocityAbs) * 0.12;
+    state.current += state.velocity * 0.1;
+  } else {
+    state.current += state.velocity * 0.09;
+  }
+
+  const scaleBoost = 1 + Math.min(state.velocityAbs / 10, 0.185);
 
   meshes.forEach((mesh, index) => {
     const distance = wrappedDistance(index, state.current);
-    const absDistance = Math.abs(distance);
-    const angle = distance * 0.28;
-    const center = Math.exp(-absDistance * absDistance * 1.15);
-    mesh.position.x = distance * spacing;
-    mesh.position.y = baseline + Math.pow(Math.min(absDistance, 2.5), 2) * 0.025;
-    mesh.position.z = -Math.pow(Math.abs(angle), 1.25) * 1.55;
-    mesh.rotation.y = -angle;
-    mesh.rotation.z = -distance * 0.012;
-    mesh.scale.set(width / 2.25, height / 3.05, 1);
+    mesh.position.set(distance, 0.05, 0);
+    mesh.rotation.set(0, 0, 0);
+    mesh.scale.set(0.7875 * scaleBoost, 1.05 * scaleBoost, 1);
     mesh.material.uniforms.uTime.value = time * 0.001;
-    mesh.material.uniforms.uBend.value = 0.08 + center * 0.15;
-    mesh.material.uniforms.uShade.value = 0.83 + center * 0.17;
-    mesh.material.uniforms.uVelocity.value = state.velocity;
-    mesh.renderOrder = Math.round(center * 100);
+    mesh.material.uniforms.uVelocityAbs.value = state.velocityAbs;
+    mesh.renderOrder = Math.round(100 - Math.abs(distance) * 10);
   });
 
-  setActive(Math.round(state.current));
+  const progress = ((state.current % 1) + 1) % 1;
+  const nearSnap = progress < 0.05 || progress > 0.95;
+  if (state.idle && Math.abs(state.velocity) > 0.05 && !nearSnap) {
+    state.idle = false;
+    statusEl.classList.add('is-hidden');
+  } else if (!state.idle && Math.abs(state.velocity) <= 0.05 && nearSnap) {
+    state.idle = true;
+    setActive(Math.round(state.current));
+    statusEl.classList.remove('is-hidden');
+  }
+
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
@@ -205,22 +225,24 @@ function moveBy(delta) { state.target += delta; }
 window.addEventListener('wheel', (event) => {
   event.preventDefault();
   const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-  moveBy(delta * 0.0012);
+  moveBy(delta / 600);
 }, { passive: false });
 
 canvas.addEventListener('pointerdown', (event) => {
   pointer.down = true;
-  pointer.startX = event.clientX;
-  pointer.startTarget = state.target;
+  pointer.lastX = event.clientX;
+  pointer.travel = 0;
   pointer.moved = false;
   canvas.setPointerCapture(event.pointerId);
 });
 
 canvas.addEventListener('pointermove', (event) => {
   if (!pointer.down) return;
-  const dx = event.clientX - pointer.startX;
-  pointer.moved = pointer.moved || Math.abs(dx) > 4;
-  state.target = pointer.startTarget - dx / Math.max(330, window.innerWidth * 0.52);
+  const dx = event.clientX - pointer.lastX;
+  pointer.lastX = event.clientX;
+  pointer.travel += Math.abs(dx);
+  pointer.moved = pointer.travel > 4;
+  state.target -= dx / 140;
 });
 
 canvas.addEventListener('pointerup', (event) => {
