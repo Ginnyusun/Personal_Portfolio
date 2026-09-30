@@ -19,20 +19,19 @@ const typeEl = document.querySelector('[data-type]');
 const currentEl = document.querySelector('[data-current]');
 const statusEl = document.querySelector('.gallery__status');
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setClearColor(0xf7f5f2, 1);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 20);
 camera.position.set(0, 0, 3);
 
 const vertexShader = `
-  uniform float uTime;
   uniform float uVelocityAbs;
   uniform float uIndex;
-  uniform float uBump;
   varying vec2 vUv;
 
   float parabola(float x) {
@@ -47,10 +46,10 @@ const vertexShader = `
     float screenX = clamp(ndcPosition.x * 0.5 + 0.5, 0.0, 1.0);
 
     // The reference gallery bends one continuous screen-space strip toward the viewer.
-    newPos.z += parabola(screenX) * 0.4 * uBump;
-    newPos.z += max(abs(uVelocityAbs) * -0.7, -0.1) * uBump;
-    newPos.z -= sin(uv.y * 10.0 + uIndex) * 0.01 * uBump;
-    newPos.y -= cos(uv.x * 10.0 + uIndex + 100.0) * 0.0035 * uBump;
+    newPos.z += parabola(screenX) * 0.4;
+    newPos.z += max(abs(uVelocityAbs) * -0.7, -0.1);
+    newPos.z -= sin(uv.y * 10.0 + uIndex) * 0.01;
+    newPos.y -= cos(uv.x * 10.0 + uIndex + 100.0) * 0.0035;
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
   }
@@ -58,49 +57,59 @@ const vertexShader = `
 
 const fragmentShader = `
   uniform sampler2D uTexture;
-  uniform float uShade;
   varying vec2 vUv;
   void main() {
     vec4 color = texture2D(uTexture, vUv);
     float paper = sin(vUv.y * 380.0) * 0.004 + sin(vUv.x * 280.0) * 0.003;
-    gl_FragColor = vec4(color.rgb * (uShade + paper), color.a);
+    gl_FragColor = vec4(color.rgb * (1.0 + paper), color.a);
   }
 `;
 
-const meshes = projects.map((project, index) => {
-  const texture = new THREE.CanvasTexture(makeFallback(project, index));
+const geometry = new THREE.PlaneGeometry(1, 1, 40, 40);
+const raycaster = new THREE.Raycaster();
+const rayPointer = new THREE.Vector2();
+
+function createTexture(source) {
+  const texture = new THREE.CanvasTexture(source);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  texture.anisotropy = maxAnisotropy;
+  return texture;
+}
+
+const meshes = projects.map((project, index) => {
   const material = new THREE.ShaderMaterial({
     uniforms: {
-      uTexture: { value: texture },
-      uTime: { value: 0 },
+      uTexture: { value: createTexture(makeFallback(project, index)) },
       uVelocityAbs: { value: 0 },
       uIndex: { value: index },
-      uBump: { value: 1 },
-      uShade: { value: 1 },
     },
     vertexShader,
     fragmentShader,
-    side: THREE.DoubleSide,
   });
-  hydrateTexture(project.image, material, project, index);
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 40, 40), material);
+  hydrateTexture(project.image, material, project);
+  const mesh = new THREE.Mesh(geometry, material);
   mesh.userData.index = index;
   scene.add(mesh);
   return mesh;
 });
 
-const state = { target: 0, current: 0, velocity: 0, velocityAbs: 0, active: -1, idle: true };
+const state = { target: 0, current: 0, velocityAbs: 0, active: -1, moving: false };
+const wheel = { active: false, endsAt: 0, start: 0, delta: 0 };
 const pointer = { down: false, lastX: 0, travel: 0, moved: false };
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const WHEEL_SCALE = 600;
+const WHEEL_IDLE_MS = 100;
+const WHEEL_INTENT = 8;
+const MOTION_EPSILON = 0.05;
+const SETTLE_EPSILON = 0.0001;
+
+function modulo(value, length) {
+  return ((value % length) + length) % length;
+}
 
 function wrappedDistance(index, current) {
-  let distance = index - current;
   const half = projects.length / 2;
-  while (distance > half) distance -= projects.length;
-  while (distance < -half) distance += projects.length;
-  return distance;
+  return modulo(index - current + half, projects.length) - half;
 }
 
 function makeFallback(project, index) {
@@ -127,7 +136,7 @@ function makeFallback(project, index) {
   return image;
 }
 
-async function hydrateTexture(path, material, project, index) {
+async function hydrateTexture(path, material, project) {
   try {
     const response = await fetch(path, { cache: 'no-cache' });
     if (!response.ok) throw new Error(`Image request failed: ${response.status}`);
@@ -147,11 +156,10 @@ async function hydrateTexture(path, material, project, index) {
     const height = image.naturalHeight * ratio;
     context.drawImage(image, (bitmap.width - width) / 2, (bitmap.height - height) / 2, width, height);
     URL.revokeObjectURL(image.src);
-    const texture = new THREE.CanvasTexture(bitmap);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    const texture = createTexture(bitmap);
+    const previousTexture = material.uniforms.uTexture.value;
     material.uniforms.uTexture.value = texture;
-    material.uniforms.uTexture.value.needsUpdate = true;
+    previousTexture.dispose();
   } catch (error) {
     console.warn(`Using fallback for ${path}`, error);
   }
@@ -166,7 +174,7 @@ function resize() {
 }
 
 function setActive(index) {
-  const active = (index + projects.length) % projects.length;
+  const active = modulo(index, projects.length);
   if (active === state.active) return;
   state.active = active;
   currentEl.textContent = String(active + 1).padStart(2, '0');
@@ -178,19 +186,32 @@ function setActive(index) {
   );
 }
 
-function animate(time = 0) {
-  state.velocity = state.target - state.current;
-  state.velocityAbs += (Math.abs(state.velocity) - state.velocityAbs) * 0.12;
+function finishWheel() {
+  if (!wheel.active) return;
+  let destination = Math.round(state.target);
+  if (Math.abs(wheel.delta) >= WHEEL_INTENT && destination === wheel.start) {
+    destination += Math.sign(wheel.delta);
+  }
+  state.target = destination;
+  wheel.active = false;
+}
 
-  if (reducedMotion) {
+function updateStatus(moving) {
+  if (moving === state.moving) return;
+  state.moving = moving;
+  statusEl.classList.toggle('is-hidden', moving);
+  if (!moving) setActive(Math.round(state.current));
+}
+
+function animate(time = 0) {
+  if (wheel.active && time >= wheel.endsAt) finishWheel();
+
+  const velocity = state.target - state.current;
+  state.velocityAbs += (Math.abs(velocity) - state.velocityAbs) * 0.12;
+  state.current = reducedMotion ? state.target : state.current + velocity * 0.09;
+
+  if (!pointer.down && !wheel.active && Math.abs(state.target - state.current) < SETTLE_EPSILON) {
     state.current = state.target;
-  } else if (!pointer.down && Math.abs(state.velocity) < 0.01) {
-    state.target = Math.round(state.current);
-    state.velocity = state.target - state.current;
-    state.velocityAbs += (Math.abs(state.velocity) - state.velocityAbs) * 0.12;
-    state.current += state.velocity * 0.1;
-  } else {
-    state.current += state.velocity * 0.09;
   }
 
   const scaleBoost = 1 + Math.min(state.velocityAbs / 10, 0.185);
@@ -198,37 +219,32 @@ function animate(time = 0) {
   meshes.forEach((mesh, index) => {
     const distance = wrappedDistance(index, state.current);
     mesh.position.set(distance, 0.05, 0);
-    mesh.rotation.set(0, 0, 0);
     mesh.scale.set(0.7875 * scaleBoost, 1.05 * scaleBoost, 1);
-    mesh.material.uniforms.uTime.value = time * 0.001;
     mesh.material.uniforms.uVelocityAbs.value = state.velocityAbs;
-    mesh.renderOrder = Math.round(100 - Math.abs(distance) * 10);
   });
 
-  const progress = ((state.current % 1) + 1) % 1;
-  const nearSnap = progress < 0.05 || progress > 0.95;
-  if (state.idle && Math.abs(state.velocity) > 0.05 && !nearSnap) {
-    state.idle = false;
-    statusEl.classList.add('is-hidden');
-  } else if (!state.idle && Math.abs(state.velocity) <= 0.05 && nearSnap) {
-    state.idle = true;
-    setActive(Math.round(state.current));
-    statusEl.classList.remove('is-hidden');
-  }
+  updateStatus(pointer.down || wheel.active || Math.abs(state.target - state.current) > MOTION_EPSILON);
 
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
 
-function moveBy(delta) { state.target += delta; }
-
 window.addEventListener('wheel', (event) => {
   event.preventDefault();
   const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-  moveBy(delta / 600);
+  if (!delta) return;
+  if (!wheel.active) {
+    wheel.active = true;
+    wheel.start = Math.round(state.target);
+    wheel.delta = 0;
+  }
+  wheel.delta += delta;
+  wheel.endsAt = performance.now() + WHEEL_IDLE_MS;
+  state.target += delta / WHEEL_SCALE;
 }, { passive: false });
 
 canvas.addEventListener('pointerdown', (event) => {
+  finishWheel();
   pointer.down = true;
   pointer.lastX = event.clientX;
   pointer.travel = 0;
@@ -248,31 +264,37 @@ canvas.addEventListener('pointermove', (event) => {
 canvas.addEventListener('pointerup', (event) => {
   if (!pointer.down) return;
   pointer.down = false;
-  canvas.releasePointerCapture(event.pointerId);
+  state.target = Math.round(state.target);
+  if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
 });
 
-canvas.addEventListener('pointercancel', () => { pointer.down = false; });
+canvas.addEventListener('pointercancel', () => {
+  pointer.down = false;
+  state.target = Math.round(state.target);
+});
 
 canvas.addEventListener('click', (event) => {
   if (pointer.moved) return;
-  const raycaster = new THREE.Raycaster();
-  raycaster.setFromCamera(new THREE.Vector2(
+  rayPointer.set(
     (event.clientX / window.innerWidth) * 2 - 1,
     -((event.clientY / window.innerHeight) * 2 - 1),
-  ), camera);
+  );
+  raycaster.setFromCamera(rayPointer, camera);
   const hit = raycaster.intersectObjects(meshes)[0];
   if (!hit) return;
-  state.target += wrappedDistance(hit.object.userData.index, state.current);
+  state.target = Math.round(state.current + wrappedDistance(hit.object.userData.index, state.current));
 });
 
 window.addEventListener('keydown', (event) => {
-  if (event.key === 'ArrowRight') moveBy(1);
-  if (event.key === 'ArrowLeft') moveBy(-1);
+  if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+  finishWheel();
+  state.target = Math.round(state.target) + (event.key === 'ArrowRight' ? 1 : -1);
 });
 
 document.querySelectorAll('[data-jump]').forEach((button) => {
   button.addEventListener('click', () => {
-    state.target += wrappedDistance(Number(button.dataset.jump), state.current);
+    const index = Number(button.dataset.jump);
+    state.target = Math.round(state.current + wrappedDistance(index, state.current));
   });
 });
 
